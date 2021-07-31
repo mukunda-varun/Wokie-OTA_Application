@@ -1,0 +1,141 @@
+/-------Date : 28-May-2021-------/
+	* Entire Induction Flow with TM1668 LED driver IC,  along with Temperature Sensor Added
+	* Added GPIO_EXTI Callback required for simulation of induction 
+/-------Date : 28-May-2021-------/
+
+/-------Date : 29-May-2021-------/
+	* Entire Extraction in single task with switch case for key press control 
+/-------Date : 29-May-2021-------/
+
+/-------Date : 31-May-2021-------/
+	* Added android interface 
+	* Handshake turns on/off the machine
+	* Check Qty presses the wattage button
+	* Press Calibration -> Press Time parameter & duty cycle is the wattage to be set
+/-------Date : 31-May-2021-------/
+
+/-------Date : 01-June-2021-------/
+	* Added Speed Sensor Logic(Need to test)
+	* Added DC Motor source & header files(Need to test)
+	* Added Temperature Button control with variable modes from android packet (Tested)
+/-------Date : 01-June-2021-------/
+
+/-------Date : 02-June-2021-------/
+	* Changed On-Off button to Flour Calibration, wattage to oil calibration & temperature to press calibration
+	* Added ADC DMA Channels(To Test)
+/-------Date : 02-June-2021-------/
+
+/-------Date : 03-June-2021-------/
+	* Added Black Board induction macros for MCP4725 integration
+	* Added MCP4725 Library for DAC integration
+	* Added Level control for BS84C12A using MCP4725(need to test)
+/-------Date : 03-June-2021-------/
+
+/-------Date : 04-June-2021-------/
+	* Found a bug, hardfault error during Temperature Read(Solved, Do not use Debug On)
+	* BS84C12A display reading part added with a function uint8_t getDisplayChar_BS84C12A(void)
+	* Added DC motor control with android(need to test)
+	* Added STOP_PROCESS with ABORT from android
+/-------Date : 04-June-2021-------/
+
+/-------Date : 05-June-2021-------/
+	* Added ADC DMA Channels(Tested)
+/-------Date : 05-June-2021-------/
+
+/-------Date : 07-June-2021-------/
+	* Added Array for BS84C12A display array(_GFE DCBA)
+/-------Date : 07-June-2021-------/
+
+/-------Date : 08-June-2021-------/
+	* Added macros for enabling & disabling DC motor drivers for VNH & BTN.
+	* Added logic for controlling the temperature based on temperature sensor with Macro enabling
+/-------Date : 08-June-2021-------/
+
+/-------Date : 10-June-2021-------/
+	* Added logic for controlling temperature based on temperature sensor feedback.
+	* Tested Motor, Induction, Android partially. Need to test continuously & check for bugs.
+/-------Date : 10-June-2021-------/
+
+/-------Date : 11-June-2021-------/
+	* Tested DAC output with MCP4725
+	* Created structures for wattage,temperature settings.
+	* Replaced variables of temperatureMode, wattageMode by struct variables.
+	* Added macro of UINT16_MAX_VALUE
+	* Changed logic for temperature control mode using temperaturePress button.
+/-------Date : 11-June-2021-------/
+
+/-------Date : 14-June-2021-------/
+	* Temperature Control with sensor logic updated slightly(need to test)
+	* Speed sensor logic updated slightly(need to test)
+/-------Date : 14-June-2021-------/
+
+/-------Date : 16-June-2021-------/
+	* Temperature Control with sensor logic updated slightly by taking average
+	* Speed sensor logic updated slightly working and value taking average
+	* DC motor updated to spare DC, due to pin damage(possible)
+/-------Date : 16-June-2021-------/
+
+/-------Date : 17-June-2021-------/
+	* DC motor control updated slightly need to test in machine
+	* Added dc motor control in DC motor control task with complete ack for android
+	* Temperature cut off macros added
+/-------Date : 17-June-2021-------/
+
+/-------Date : 22-June-2021-------/
+	* Configured TIMER 6 for 5ms(200Hz) for debounce of seven segment for BS84C12A
+	* Added a dislayValueHex variable for getting the hex data of 7 segment display
+	* Modified getDisplayChar_BS84C12A(uint8_t charValue) to compare and return the character
+	* Added compiler commenting for Enabling the ADC method for getting the display data
+	* Added Logics for controlling the induction based on Black board(BS84C12A) w.r.t. temperature for wokie
+/-------Date : 22-June-2021-------/
+
+/-------Date : 23-June-2021-------/
+	* Process Error part added(to test)
+	* Added logic for temperature, speed sensor
+/-------Date : 23-June-2021-------/
+
+/-------Date : 24-June-2021-------/
+	* Added few logics for android apk testing
+/-------Date : 24-June-2021-------/
+
+/-------Date : 28-June-2021-------/
+	* Added few logics for android apk testing by supriya mam
+/-------Date : 28-June-2021-------/
+
+/-------Date : 29-June-2021-------/
+	* Added tested logic for detection of data on display. Tested by Santosh
+	* Modified logic for TM1668 display data extraction into single line
+	* Wattage & Temperature mode working logic changed by adding else condition in Induction_Control_task 
+	for pressing wattage button 
+	* Added a macro for TEMPERATURE_MAX_CAN_SET for limiting the maximum temperature to 300
+/-------Date : 29-June-2021-------/
+
+/-------Date : 30-June-2021-------/
+	* Updated code for testing with Wokie Android APK
+	* Updated logic for ignoring D segment & forming the segment character for BS84C12A
+	* Need to test with temperature control & wattage control.(Issue with temperature control)
+/-------Date : 30-June-2021-------/
+
+/-------Date : 30-June-2021-------/
+	* Updated code for proper temperature control and unnecessary button press avoided.
+/-------Date : 30-June-2021-------/
+
+/-------Date : 02-July-2021-------/
+	* Temperature & speed sensor task timing reduced.
+	* dc motor task timing increased
+/-------Date : 02-July-2021-------/
+
+/-------Date : 04-July-2021-------/
+	* Temperature Curve Logic implemented
+	* Wattage 1000 macro added
+	* Changed the variable of avgTemperature to temperatureMode.valueSetOnInduction
+	* Updated all variables related to temperature w.r.t. structure temperatureMode
+/-------Date : 04-July-2021-------/
+
+
+/-------Date : 05-July-2021-------/
+	* Temperature Curve Logic Updated for 3 range of temperature
+	* Added TM1668 pins in interrupts
+	* 
+/-------Date : 05-July-2021-------/
+
