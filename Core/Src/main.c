@@ -287,7 +287,6 @@ void  Send_Status_Wait_ACK()
 		msg[5] = avg_speed;
 		msg[6] = 0;
 		msg[7] = 0;
-		msg[8] = 25;
 		msg[63] = 0x12;
 	}
 	else
@@ -300,7 +299,6 @@ void  Send_Status_Wait_ACK()
 		msg[5] = avg_speed;
 		msg[6] = 0;
 		msg[7] = 0;
-		msg[8] = 25;
 		msg[63] = 0x12;
 	}
 	CDC_Transmit_FS(msg,64);
@@ -319,7 +317,6 @@ void  Send_Status_data()
 		msg[5] = avg_speed;
 		msg[6] = 0;
 		msg[7] = 0;
-		msg[8] = 25;
 		msg[63] = 0x12;
 	}
 	else
@@ -332,7 +329,6 @@ void  Send_Status_data()
 		msg[5] = avg_speed;
 		msg[6] = 0;
 		msg[7] = 0;
-		msg[8] = 25;
 		msg[63] = 0x12;
 	}
 	CDC_Transmit_FS(msg,64);
@@ -1409,7 +1405,12 @@ uint8_t getDisplayChar_BS84C12A(uint8_t charValue)
 	}
 	else if(charValue == ERROR_BS84C12A)
 	{
-		bs84c12aInductionError = 1;
+		errorCnt.inductionErrorCnt++;
+		if(errorCnt.inductionErrorCnt >= 5)
+		{
+			bs84c12aInductionError = 1;
+			errorCnt.inductionErrorCnt = 0;
+		}
 		return 'E';
 	}
 	else if(charValue == DASH_BS84C12A)
@@ -1957,7 +1958,6 @@ int main(void)
 #endif
 //	HAL_Delay(2000);
   /* USER CODE END 2 */
-
   /* Init scheduler */
   osKernelInitialize();
 
@@ -2278,6 +2278,10 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
@@ -2464,7 +2468,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, INDUCTION_K1_Pin|DRUM_DC_INA_Pin|DRUM_DC_INB_Pin|SPARE_DC_EN_Pin
-                          |SPARE_DC_ENB_Pin|SPI_CS2_Pin, GPIO_PIN_RESET);
+                          |SPI_CS2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, DEBUG_LED_Pin|USB_PowerSwitchOn_Pin|BUZZER_Pin|OIL_STEP_DIR_Pin
@@ -2489,9 +2493,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : INDUCTION_K1_Pin DRUM_DC_INA_Pin DRUM_DC_INB_Pin SPARE_DC_EN_Pin
-                           SPARE_DC_ENB_Pin SPI_CS2_Pin */
+                           SPI_CS2_Pin */
   GPIO_InitStruct.Pin = INDUCTION_K1_Pin|DRUM_DC_INA_Pin|DRUM_DC_INB_Pin|SPARE_DC_EN_Pin
-                          |SPARE_DC_ENB_Pin|SPI_CS2_Pin;
+                          |SPI_CS2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -2783,10 +2787,13 @@ void StartDefaultTask(void *argument)
 			{
 				if(++errorCnt.inductionBoardErrorCnt >= 20)
 				{
-					processError.errorNumberAndroid = displayData;
-					processError.inductionBoardError = 1;
-					bs84c12aInductionError = 0;
-					errorCnt.inductionBoardErrorCnt = 0;
+					if(displayData != 'E' && displayData != 'X')
+					{
+						errorCnt.inductionBoardErrorCnt = 0;
+						bs84c12aInductionError = 0;
+						processError.errorNumberAndroid = displayData;
+						processError.inductionBoardError = 1;
+					}
 				}
 			}
 		    osDelay(100);
@@ -2825,6 +2832,8 @@ void android_task(void *argument)
 						 soc_flag = 1;
 						 initialOnOffCnt = 0;
 						 sendTempAckOnce = 0;
+						 processError.errorNumberAndroid = 0;
+						 errorCnt.speedSensorErrorCnt = 0;
 						 if(received_data[2] != 0)
 						 {
 							 dutyCycle = getDCMotorlevels(miscellaneousSetting.defaultMotorDutyCycleAuto);
@@ -3080,7 +3089,7 @@ void InductionControlTask(void *argument)
 		  temperatureControlCurve(temperatureMode.valueToSet, avgTemperature);
 	  }
 	#endif
-	osDelay(1000);
+	osDelay(2000);
 #else
 	osDelay(500);
 #endif
@@ -3164,7 +3173,7 @@ void MotorControlTask(void *argument)
 		}
 	#endif
 	}
-	osDelay(250);
+	osDelay(500);
 #elif DC_MOTOR_TASK_ENABLE == 0
 	  osDelay(5000);
 #endif

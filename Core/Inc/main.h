@@ -197,7 +197,7 @@ typedef struct{
 	uint8_t speedSensorErrorCnt;
 	uint8_t temperatureSensorErrorCnt;
 	uint8_t inductionBoardErrorCnt;
-	uint8_t inductionWokPresensenceErrorCnt;
+	uint8_t inductionErrorCnt;
 	uint16_t stopErrorCnt;
 }Cnt;
 Cnt errorCnt;

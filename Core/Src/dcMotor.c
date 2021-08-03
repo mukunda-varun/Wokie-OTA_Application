@@ -10,6 +10,16 @@
 	 * @return: NOTHING*/
 void PWM_Initialize(dcMotor_t motor)
 {
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);		//Drum Motor
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);		//Spare Motor
+	TIM1->CCR2 = 0;
+	TIM1->CCR4 = 0;
+	HAL_GPIO_WritePin(DRUM_DC_INB_GPIO_Port, DRUM_DC_INB_Pin, RESET);
+	HAL_GPIO_WritePin(DRUM_DC_INA_GPIO_Port, DRUM_DC_INA_Pin, RESET);
+	HAL_GPIO_WritePin(SPARE_DC_EN_GPIO_Port, SPARE_DC_EN_Pin, RESET);
+	HAL_GPIO_WritePin(SPARE_DC_ENB_GPIO_Port, SPARE_DC_ENB_Pin, RESET);
+
+/*
 	if(motor == drumDCMotor)
 	{
 #if BTN7960_DRIVER_EN == 1
@@ -27,12 +37,13 @@ void PWM_Initialize(dcMotor_t motor)
 	}
 	else if(motor == spareDCMotor)
 	{
-		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);		//Spare Motor
+//		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);		//Spare Motor
 		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);		//Spare Motor
-		TIM1->CCR3 = 0;
 		TIM1->CCR4 = 0;
+//		TIM1->CCR3 = 0;
 		HAL_GPIO_WritePin(SPARE_DC_EN_GPIO_Port, SPARE_DC_EN_Pin, RESET);
-	}
+//		HAL_GPIO_WritePin(SPARE_DC_ENB_GPIO_Port, SPARE_DC_ENB_Pin, RESET);
+	}*/
 }
 
 /* @brief: This function is to run the DC motor
@@ -60,7 +71,7 @@ void dcMotorSetPWM(float pwmValue, dcMotor_t motor,  motorDirection_t direction)
 		else if(motor == spareDCMotor)
 		{
 			HAL_GPIO_WritePin(SPARE_DC_EN_GPIO_Port, SPARE_DC_EN_Pin, RESET);
-			HAL_GPIO_WritePin(SPARE_DC_ENB_GPIO_Port, SPARE_DC_ENB_Pin, SET);
+//			HAL_GPIO_WritePin(SPARE_DC_ENB_GPIO_Port, SPARE_DC_ENB_Pin, SET);
 //			TIM1->CCR3 = 0;
 			TIM1->CCR4 = pwmValue;
 		}
@@ -82,7 +93,7 @@ void dcMotorSetPWM(float pwmValue, dcMotor_t motor,  motorDirection_t direction)
 		else if(motor == spareDCMotor)
 		{
 			HAL_GPIO_WritePin(SPARE_DC_EN_GPIO_Port, SPARE_DC_EN_Pin, SET);
-			HAL_GPIO_WritePin(SPARE_DC_ENB_GPIO_Port, SPARE_DC_ENB_Pin, RESET);
+//			HAL_GPIO_WritePin(SPARE_DC_ENB_GPIO_Port, SPARE_DC_ENB_Pin, RESET);
 //			TIM1->CCR3 = pwmValue;
 			TIM1->CCR4 = pwmValue;
 		}
