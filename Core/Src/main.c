@@ -110,7 +110,7 @@ const osThreadAttr_t errorHandle_t_attributes = {
 /* USER CODE BEGIN PV */
 
 uint8_t cooking_started=0;
-uint8_t temp_raise=0, ackCnt = 0, wattAckCnt = 0, sendTempAckOnce = 0;
+uint8_t temp_raise=0, ackCnt = 0, wattAckCnt = 0, sendTempAckOnce = 0, eoc_flag = 0, eoc_count = 0;
 uint8_t counter=0;
 uint8_t pressCnt = 0;
 
@@ -277,60 +277,48 @@ void  Send_Response(uint8_t msgId ,uint8_t data)
 void  Send_Status_Wait_ACK()
 {
 	memset(msg,0,64);
-	if(avgTemperature > 255)
-	{
-		msg[0] = 0x13;
-		msg[1] = STATUS_ID;
-		msg[2] = 2;
-		msg[3] = (int)avgTemperature;
-		msg[4] = ((int)avgTemperature >> 8);
-		msg[5] = avg_speed;
-		msg[6] = 0;
-		msg[7] = 0;
-		msg[63] = 0x12;
-	}
-	else
-	{
-		msg[0] = 0x13;
-		msg[1] = STATUS_ID;
-		msg[2] = 2;
-		msg[3] = avgTemperature;
-		msg[4] = 0;
-		msg[5] = avg_speed;
-		msg[6] = 0;
-		msg[7] = 0;
-		msg[63] = 0x12;
-	}
+	msg[0] = 0x13;
+	msg[1] = STATUS_ID;
+	msg[2] = 2;
+	msg[3] = (int)avgTemperature;
+	msg[4] = ((int)avgTemperature >> 8);
+	msg[5] = avg_speed;
+	msg[6] = 0;
+	msg[7] = 0;
+	msg[63] = 0x12;
 	CDC_Transmit_FS(msg,64);
 }
 
 void  Send_Status_data()
 {
 	memset(msg,0,64);
-	if(avgTemperature > 255)
-	{
+	msg[0] = 0x13;
+	msg[1] = STATUS_ID;
+	msg[2] = 1;
+	msg[3] = (int)avgTemperature;
+	msg[4] = ((int)avgTemperature >> 8);
+	msg[5] = avg_speed;
+	msg[6] = 0;
+	msg[7] = 0;
+	msg[63] = 0x12;
+	CDC_Transmit_FS(msg,64);
+}
+
+
+void  Send_Standby_Status()
+{
+	memset(msg,0,64);
+
 		msg[0] = 0x13;
 		msg[1] = STATUS_ID;
-		msg[2] = 1;
-		msg[3] = (int)avgTemperature;
-		msg[4] = ((int)avgTemperature >> 8);
-		msg[5] = avg_speed;
-		msg[6] = 0;
+		msg[2] = 2;
+		msg[3] = 0xFF;
+		msg[4] = 0xFF;
+		msg[5] = 0xFF;
+		msg[6] = 0xFF;
 		msg[7] = 0;
 		msg[63] = 0x12;
-	}
-	else
-	{
-		msg[0] = 0x13;
-		msg[1] = STATUS_ID;
-		msg[2] = 1;
-		msg[3] = avgTemperature;
-		msg[4] = 0;
-		msg[5] = avg_speed;
-		msg[6] = 0;
-		msg[7] = 0;
-		msg[63] = 0x12;
-	}
+
 	CDC_Transmit_FS(msg,64);
 }
 
@@ -385,7 +373,7 @@ void stopHeaterBasedOnError(void)
 	}
 	if(processError.processStopError == 1)
 	{
-		Send_Error_Msg(processError.errorNumberAndroid);
+//		Send_Error_Msg(processError.errorNumberAndroid);
 		dutyCycle = 0;
 		drumMotor = dcMotorInit;
 		#if	BS84C12A_DRIVE_ENABLE == 1
@@ -654,7 +642,7 @@ void parameterValueAssignment(void)
 
 	if(miscellaneousSetting.endOfDayCleaningTime == 0)
 	{
-		miscellaneousSetting.endOfDayCleaningTime = DEFAULT_EOD_TIME;
+		miscellaneousSetting.endOfDayCleaningTime = DEFAULT_EOD_TIME / TIME_500MS_IN_SEC;
 	}
 	else
 	{
@@ -662,7 +650,7 @@ void parameterValueAssignment(void)
 	}
 	if(miscellaneousSetting.endOfRecipeCleaningTime == 0)
 	{
-		miscellaneousSetting.endOfRecipeCleaningTime = DEFAULT_EOR_TIME;
+		miscellaneousSetting.endOfRecipeCleaningTime = DEFAULT_EOR_TIME / TIME_500MS_IN_SEC;
 	}
 	else
 	{
@@ -2898,6 +2886,8 @@ void android_task(void *argument)
 						 sendTempAckOnce = 0;
 
 						 cooking_started =0;
+						 eoc_flag = 1;
+						 eoc_count = 0;
 						 Send_Response(END_OF_COOKING,1);
 						 break;
 					case INSTRUCTION_SET:
@@ -2962,6 +2952,13 @@ void android_task(void *argument)
 		if(	soc_flag )
 		{
 			Send_Status_Wait_ACK();
+		}
+		if(eoc_flag && eoc_count++ >= 2)
+		{
+			Send_Standby_Status();
+			osDelay(15);
+			eoc_count = 0;
+			eoc_flag = 0;
 		}
 #endif
 		osDelay(1000);
