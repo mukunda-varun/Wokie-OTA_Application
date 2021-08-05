@@ -199,8 +199,9 @@ typedef struct{
 	uint8_t inductionBoardErrorCnt;
 	uint8_t inductionErrorCnt;
 	uint16_t stopErrorCnt;
+//	uint8_t endOfCookingCnt;
 }Cnt;
-Cnt errorCnt;
+Cnt timerCnt;
 
 typedef struct{
 	uint8_t speedSensorError : 1;
@@ -210,6 +211,15 @@ typedef struct{
 	uint8_t processStopError : 1;
 }errorState;
 errorState processError;
+
+typedef struct{
+uint8_t startofCooking : 1;	//soc_flag
+uint8_t temperatureAutoMode : 1;
+uint8_t sendTempAckOnce : 1;
+uint8_t manualMode : 1;//cooking_started
+//uint8_t endOfCooking : 1;//eoc_flag
+}andStruct_t;
+andStruct_t androidProcessStruct;
 
 
 typedef struct

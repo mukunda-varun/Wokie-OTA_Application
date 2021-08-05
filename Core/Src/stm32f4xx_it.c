@@ -23,7 +23,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-extern int debounce_timeout_induction;
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -393,8 +393,6 @@ void TIM6_DAC_IRQHandler(void)
 	  HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
 	  debugCnt = 0;
   }
-  if(debounce_timeout_induction>0)
-	  debounce_timeout_induction--;
 
 #if BS84C12A_DRIVE_ENABLE == 1
 	if(HAL_GPIO_ReadPin(A_SEG_GPIO_Port, A_SEG_Pin) == (uint8_t)RESET)

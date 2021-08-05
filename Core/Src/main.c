@@ -110,7 +110,7 @@ const osThreadAttr_t errorHandle_t_attributes = {
 /* USER CODE BEGIN PV */
 
 uint8_t cooking_started=0;
-uint8_t temp_raise=0, ackCnt = 0, wattAckCnt = 0, sendTempAckOnce = 0, eoc_flag = 0, eoc_count = 0;
+uint8_t temp_raise=0, ackCnt = 0, wattAckCnt = 0;
 uint8_t counter=0;
 uint8_t pressCnt = 0;
 
@@ -175,13 +175,9 @@ uint8_t received_data[USB_PACKET_LENGTH],Data_Reciption;
 uint32_t received_data_size;
 uint32_t receive_total;
 uint8_t data_id,cmd_id, tempCmdID;
-uint8_t autoTemperatureMode, autoMode;
-uint8_t local_action;
-static uint8_t ref_id;
-uint8_t counterp=0;
+//uint8_t autoTemperatureMode, autoMode;
 uint16_t dataAndroid = 0;
 uint8_t and_ack[64];
-uint8_t soc_flag =0;
 float temperatureACKAuto, temperatureACKManual, speedCorrectionFactor;
 uint16_t motorRotateCleaningTime, motorRotateCleaningCnt;
 /*Android Variables*/
@@ -192,12 +188,11 @@ uint8_t msg[USB_PACKET_LENGTH];
 
 
 /********Sensor Variables*************/
-uint16_t objTemperature = 0.0f, setTemperature = 0.0f;
+uint16_t objTemperature = 0.0f;
 int temperatureArray[20] = {};
 float avgTemperature = 0.0f, sumTemperature = 0, previousTemperature = 0;
 char temperatureBuff[100] = "";
 uint16_t initialOnOffCnt = 0;
-uint16_t pressWattageCnt = 0;
 /********Input Capture Variables*************/
 volatile float current_speed = 0;
 volatile float previous_speed = 0;
@@ -207,7 +202,6 @@ float sum_speed = 0;
 float avg_speed = 0, correctionFactor = 0.0f;
 int speed_cnt = 0;
 char speedSensorBuff[100] = "";
-int debounce_timeout_induction;
 
 volatile uint8_t gu8_State = IC_IDLE;
 volatile uint8_t no_tooth = 0;
@@ -221,20 +215,14 @@ volatile float speed_ic = 0;
 volatile uint32_t tick_arr[25];
 volatile uint32_t sum_tick = 0;
 volatile uint32_t avg_tick = 0;
-volatile uint8_t cnt = 0;
-volatile uint8_t calc_complete = 0;
+volatile uint8_t avgCnt = 0;
 /********Averaging IC Variables*************/
-volatile float pre_error;
-volatile int integral;
-volatile float error;
-volatile float derivative;
 /********Input Capture Variables*************/
 
 /********Sensor Variables*************/
 
 /********DC Motor Variables*************/
-float currentMotorPWM, previousMotorPWM, dutyCycle, cleanDutyCycle;
-uint16_t motorAccelerationCnt, waitCnt;
+float dutyCycle, cleanDutyCycle;
 /********DC Motor Variables*************/
 
 /* USER CODE END PV */
@@ -365,15 +353,15 @@ void stopHeaterBasedOnError(void)
 	if(processError.speedSensorError == 0 && processError.temperatureSensorError == 0 && processError.inductionBoardError == 0)
 	{
 		  processError.processStopError = 0;
-		  errorCnt.stopErrorCnt = 0;
+		  timerCnt.stopErrorCnt = 0;
 	}
 	if(processError.speedSensorError == 1 || processError.temperatureSensorError == 1 || processError.inductionBoardError == 1)
 	{
 		processError.processStopError = 1;
 	}
-	if(processError.processStopError == 1)
+	if(processError.processStopError == 1 && processError.errorNumberAndroid <= 15)
 	{
-//		Send_Error_Msg(processError.errorNumberAndroid);
+		Send_Error_Msg(processError.errorNumberAndroid);
 		dutyCycle = 0;
 		drumMotor = dcMotorInit;
 		#if	BS84C12A_DRIVE_ENABLE == 1
@@ -388,12 +376,16 @@ void stopHeaterBasedOnError(void)
 			  }
 		#endif
 	}
+	else if(processError.errorNumberAndroid > 15)
+	{
+		processError.processStopError = 0;
+	}
 }
 void speedSensorErrorCheck(void)
 {
-	  if(cooking_started == 1)
+	  if(androidProcessStruct.startofCooking == 1)
 	  {
-		  if(errorCnt.speedSensorErrorCnt++ >= SENSOR_ERROR_CHECK_CNT)
+		  if(timerCnt.speedSensorErrorCnt++ >= SENSOR_ERROR_CHECK_CNT)
 		  {
 			  avg_speed = 0;
 	#if 0
@@ -415,7 +407,7 @@ void speedSensorErrorCheck(void)
 	  }
 	  else
 	  {
-		  if(errorCnt.speedSensorErrorCnt++ >= 80)
+		  if(timerCnt.speedSensorErrorCnt++ >= 80)
 		  {
 			  avg_speed = 0;
 		  }
@@ -1393,11 +1385,11 @@ uint8_t getDisplayChar_BS84C12A(uint8_t charValue)
 	}
 	else if(charValue == ERROR_BS84C12A)
 	{
-		errorCnt.inductionErrorCnt++;
-		if(errorCnt.inductionErrorCnt >= 5)
+		timerCnt.inductionErrorCnt++;
+		if(timerCnt.inductionErrorCnt >= 10)
 		{
 			bs84c12aInductionError = 1;
-			errorCnt.inductionErrorCnt = 0;
+			timerCnt.inductionErrorCnt = 0;
 		}
 		return 'E';
 	}
@@ -1531,7 +1523,6 @@ void Process_WOKIE_Control(uint8_t cmd_id1, uint16_t  data)
 		 if(wattageMode.valueToSet >= 500)
 		 {
 			 initialOnOffCnt = 0;
-			 pressWattageCnt = 0;
 		 }
 #elif BS84C12A_DRIVE_ENABLE == 1
 		 wattageLevel_BS84C12A = wattageMode.valueFromAndroid;
@@ -1546,20 +1537,21 @@ void Process_WOKIE_Control(uint8_t cmd_id1, uint16_t  data)
 	}
 	else if(cmd_id1 == HEATER_ON_TEMP)
 	{
+#if		 TM1668_DRIVE_ENABLE == 1
 		 initialOnOffCnt = 0;
-		 pressWattageCnt = 0;
+#endif
 		 wattageMode.valueToSet = 0;
 		 inductionMode.temperatureMode = 1;
 		 inductionMode.wattageMode = 0;
 		 temperatureMode.valueFromAndroid  = data;
 		 temperatureMode.valueToSet = temperatureMode.valueFromAndroid;
-		 if(sendTempAckOnce == 0 && autoTemperatureMode == 0 && autoMode == 0)
+		 if(androidProcessStruct.sendTempAckOnce == 0 && androidProcessStruct.manualMode == 1/* && autoMode == 0*/)
 		 {
 			 temp_raise = 1;
 			 Send_temp_Response(INSTRUCTION_SET,2,1);
 			 osDelay(15);
 		 }
-		 else if(sendTempAckOnce == 1)
+		 else if(androidProcessStruct.sendTempAckOnce == 1)
 		 {
 			 Send_temp_Response(INSTRUCTION_SET,2,3);
 			 osDelay(15);
@@ -1694,9 +1686,9 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 	else if(deltaTempStruct.deltaTemperature >= deltaTempStruct.deltaLevel8 && deltaTempStruct.deltaTemperature < deltaTempStruct.deltaLevel7 && deltaTempStruct.deltaTemperature <= 300)
 	{
 #if 0
-		if(temp_raise == 1 && autoMode == 0 && autoTemperatureMode == 0)
+		if(temp_raise == 1 && autoMode == 0 && androidProcessStruct.temperatureAutoMode == 0)
 		{
-			sendTempAckOnce = 1;
+			androidProcessStruct.sendTempAckOnce = 1;
 			temp_raise=0;
 			Send_temp_Response(INSTRUCTION_SET,2,3);
 			osDelay(15);
@@ -1738,12 +1730,12 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 	{
 		if(PERCENT_CALCULATION(setTemperatureValue, currentTemperature) < temperatureACKAuto)
 		{
-			if(autoTemperatureMode == 1)
+			if(androidProcessStruct.temperatureAutoMode == 1)
 			{
 				Send_Status_data();
 				osDelay(15);
-				autoTemperatureMode = 0;
-				cooking_started = 1;
+				androidProcessStruct.temperatureAutoMode = 0;
+//				androidProcessStruct.manualMode = 1;
 			}
 		}
 	}
@@ -1751,11 +1743,11 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 	{
 		if(PERCENT_CALCULATION(setTemperatureValue, currentTemperature) < temperatureACKManual)
 		{
-			if(sendTempAckOnce == 0 && autoTemperatureMode == 0 && autoMode == 0)
+			if(androidProcessStruct.sendTempAckOnce == 0 && androidProcessStruct.manualMode == 1)
 			{
 				Send_temp_Response(INSTRUCTION_SET,2,3);
 				osDelay(15);
-				sendTempAckOnce = 1;
+				androidProcessStruct.sendTempAckOnce = 1;
 			}
 		}
 	}
@@ -1819,7 +1811,7 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 		{
 			if(temp_raise == 1 && autoMode == 0)
 			{
-				sendTempAckOnce = 1;
+				androidProcessStruct.sendTempAckOnce = 1;
 				temp_raise=0;
 				Send_temp_Response(INSTRUCTION_SET,2,3);
 				osDelay(15);
@@ -1838,7 +1830,7 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 #if			0
 			if(temp_raise == 1)
 			{
-				sendTempAckOnce = 1;
+				androidProcessStruct.sendTempAckOnce = 1;
 				Send_temp_Response(INSTRUCTION_SET,2,3);
 				temp_raise=0;
 				osDelay(15);
@@ -1848,17 +1840,17 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 //		if(PERCENT_CALCULATION(setTemperatureValue, currentTemperature) < TEMP_ACK_PERCENT)
 		if(currentTemperature >= 120)
 		{
-			if(autoTemperatureMode == 1)
+			if(androidProcessStruct.temperatureAutoMode == 1)
 			{
 				Send_Status_data();
-				autoTemperatureMode = 0;
-				cooking_started = 1;
+				androidProcessStruct.temperatureAutoMode = 0;
+				androidProcessStruct.manualMode = 1;
 			}
-			else if(sendTempAckOnce == 0 && autoTemperatureMode == 0 && autoMode == 0)
+			else if(androidProcessStruct.sendTempAckOnce == 0 && androidProcessStruct.temperatureAutoMode == 0 && autoMode == 0)
 			{
 				Send_temp_Response(INSTRUCTION_SET,2,3);
 				osDelay(15);
-				sendTempAckOnce = 1;
+				androidProcessStruct.sendTempAckOnce = 1;
 			}
 		}
 	}
@@ -2648,7 +2640,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 		{
 //			processError.processStopError = 0;
 			processError.speedSensorError = 0;
-			errorCnt.speedSensorErrorCnt = 0;
+			timerCnt.speedSensorErrorCnt = 0;
 			if(gu8_State == IC_IDLE)
 			{
 				gu32_T1 = TIM3->CCR2;
@@ -2664,7 +2656,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 		}
 		else
 		{
-			errorCnt.speedSensorErrorCnt = 0;
+			timerCnt.speedSensorErrorCnt = 0;
 			current_speed = 0;
 			avg_speed = 0;
 		}
@@ -2742,7 +2734,7 @@ void StartDefaultTask(void *argument)
 #endif
 		if(uartPrintArr[1] == 'E')
 		{
-			if(errorCnt.inductionBoardErrorCnt++ >= 200)
+			if(timerCnt.inductionBoardErrorCnt++ >= 200)
 			{
 				processError.inductionErrorNumber = getErrorNumber();
 				Send_Error_Msg(processError.inductionErrorNumber);
@@ -2760,7 +2752,7 @@ void StartDefaultTask(void *argument)
 				inductionMode.wattageMode = 0;
 				wattageMode.valueToSet = 0;
 				temperatureMode.valueToSet = 0;
-				errorCnt.inductionBoardErrorCnt = 0;
+				timerCnt.inductionBoardErrorCnt = 0;
 				keyPressState = pressOnOff;
 				processError.inductionBoardError = 1;
 			}
@@ -2773,11 +2765,11 @@ void StartDefaultTask(void *argument)
 			displayData = getDisplayChar_BS84C12A(displayValueHex);
 			if(bs84c12aInductionError == 1)
 			{
-				if(++errorCnt.inductionBoardErrorCnt >= 20)
+				if(++timerCnt.inductionBoardErrorCnt >= 20)
 				{
 					if(displayData != 'E' && displayData != 'X')
 					{
-						errorCnt.inductionBoardErrorCnt = 0;
+						timerCnt.inductionBoardErrorCnt = 0;
 						bs84c12aInductionError = 0;
 						processError.errorNumberAndroid = displayData;
 						processError.inductionBoardError = 1;
@@ -2817,18 +2809,21 @@ void android_task(void *argument)
 						 Send_Response(HANDSHAKE,1);
 						 break;
 					case START_OF_COOKING:
-						 soc_flag = 1;
+#if 					TM1668_DRIVE_ENABLE == 1
 						 initialOnOffCnt = 0;
-						 sendTempAckOnce = 0;
+#endif
+						 androidProcessStruct.startofCooking = 1;
+//						 androidProcessStruct.endOfCooking = 0;
+						 androidProcessStruct.sendTempAckOnce = 0;
 						 processError.errorNumberAndroid = 0;
-						 errorCnt.speedSensorErrorCnt = 0;
+						 timerCnt.speedSensorErrorCnt = 0;
 						 if(received_data[2] != 0)
 						 {
 							 dutyCycle = getDCMotorlevels(miscellaneousSetting.defaultMotorDutyCycleAuto);
 							 drumMotor = dcMotorInit;
 							 osDelay(20);
-							 autoTemperatureMode = 1;
-							 autoMode = 1;
+							 androidProcessStruct.temperatureAutoMode = 1;
+							 androidProcessStruct.manualMode = 0;
 							 if(received_data[3] != 0)
 							 {
 								 dataAndroid = (( received_data[3] << 8) | (received_data[2]));
@@ -2845,15 +2840,12 @@ void android_task(void *argument)
 							 dutyCycle = getDCMotorlevels(miscellaneousSetting.defaultMotorDutyCycleManual);
 							 drumMotor = dcMotorInit;
 							 osDelay(20);
-							 autoMode = 0;
 							 Send_Status_data();
-							 autoTemperatureMode = 0;
-							 cooking_started =1;
+							 androidProcessStruct.temperatureAutoMode = 0;
+							 androidProcessStruct.manualMode = 1;
 						 }
 						break;
 					case END_OF_COOKING:
-						 autoMode = 0 ;
-						 soc_flag =0;
 				#if BS84C12A_DRIVE_ENABLE
 						 wattageLevel_BS84C12A=0;
 						 wattageSettingDACCounts_BS84C12A = getWattageLevelCount_BS84C12A(wattageLevel_BS84C12A);
@@ -2869,11 +2861,15 @@ void android_task(void *argument)
 						 drumMotor = dcMotorInit;
 						 cleanDutyCycle = 0;
 						 motorRotateCleaning = dcMotorInit;
-						 temperatureMode.valueToSet = 0;
+
 						 wattageMode.valueToSet = 0;
+
 						 temperatureMode.valueToSet = 0;
+						 temperatureMode.valueToSet = 0;
+
 						 inductionMode.temperatureMode = 0;
 						 inductionMode.wattageMode = 0;
+
 						 processError.temperatureSensorError = 0;
 						 processError.speedSensorError = 0;
 						 processError.inductionBoardError = 0;
@@ -2881,17 +2877,20 @@ void android_task(void *argument)
 						 processError.errorNumberAndroid = 0;
 
 
-						 autoTemperatureMode = 0;
-						 autoMode = 0;
-						 sendTempAckOnce = 0;
+						 androidProcessStruct.temperatureAutoMode = 0;
+						 androidProcessStruct.sendTempAckOnce = 0;
+						 androidProcessStruct.manualMode =0;
+						 androidProcessStruct.startofCooking =0;
+//						 androidProcessStruct.endOfCooking = 1;
 
-						 cooking_started =0;
-						 eoc_flag = 1;
-						 eoc_count = 0;
-						 Send_Response(END_OF_COOKING,1);
+//						 timerCnt.endOfCookingCnt = 0;
+
+						 Send_Standby_Status();
+						 osDelay(15);
+//						 Send_Response(END_OF_COOKING,1);
 						 break;
 					case INSTRUCTION_SET:
-						 if(cooking_started == 1)
+						 if(androidProcessStruct.manualMode == 1)
 						 {
 							 dataAndroid = ((received_data[4]<<8) | (received_data[3]));
 							 memcpy(and_ack, received_data, 64);
@@ -2899,7 +2898,7 @@ void android_task(void *argument)
 						 }
 						 break;
 					case ROTATE_ID:
-						 motorRotateCleaningTime = (DEFAULT_ROTATE_TIME / TIME_500MS_IN_SEC);				// 2 secs
+						 motorRotateCleaningTime = (DEFAULT_ROTATE_TIME / TIME_500MS_IN_SEC);				// 1 secs
 						 cleanDutyCycle = getDCMotorlevels(miscellaneousSetting.cleanMotorSpeed);
 						 motorRotateCleaning = dcMotorInit;
 						 tempCmdID = ROTATE_ID;
@@ -2946,20 +2945,19 @@ void android_task(void *argument)
 						 break;
 
 				}
-				ref_id = data_id;
 			}
 		}
-		if(	soc_flag )
+		if(	androidProcessStruct.startofCooking )
 		{
 			Send_Status_Wait_ACK();
 		}
-		if(eoc_flag && eoc_count++ >= 2)
+		/*if(androidProcessStruct.endOfCooking && timerCnt.endOfCookingCnt++ >= 2)
 		{
 			Send_Standby_Status();
 			osDelay(15);
-			eoc_count = 0;
-			eoc_flag = 0;
-		}
+			timerCnt.endOfCookingCnt = 0;
+			androidProcessStruct.endOfCooking = 0;
+		}*/
 #endif
 		osDelay(1000);
 	}
@@ -3016,7 +3014,7 @@ void InductionControlTask(void *argument)
 			  inductionMode.wattageMode = 0;
 		  }
 	  }
-	  else if(soc_flag == 0)
+	  else if(androidProcessStruct.startofCooking == 0)
 	  {
 		  if(((uartPrintArr[2] != 'F' && uartPrintArr[3] != 'F' ) || (uartPrintArr[1] == '0' && uartPrintArr[2] == 'N' )) && (uartPrintArr[1] != '-' && uartPrintArr[2] != '-'))
 		  {
@@ -3063,7 +3061,7 @@ void InductionControlTask(void *argument)
 		  }
 		#endif
 	  }
-	  else if(soc_flag == 0)
+	  else if(androidProcessStruct.startofCooking == 0)
 	  {
 		  if(((uartPrintArr[2] != 'F' && uartPrintArr[3] != 'F' ) || (uartPrintArr[1] == '0' && uartPrintArr[2] == 'N' )) && (uartPrintArr[1] != '-' && uartPrintArr[2] != '-'))
 		  {
@@ -3147,9 +3145,10 @@ void MotorControlTask(void *argument)
 		case dcMotorWaitForTimeComlete:
 			 if(motorRotateCleaningCnt++ >= motorRotateCleaningTime)
 			 {
-				 motorRotateCleaning = dcMotorCompleted;
-				 dcMotorSetPWM(0, drumDCMotor, ANTICLOCKWISE);
+				 cleanDutyCycle = 0;
+				 dcMotorSetPWM(cleanDutyCycle, drumDCMotor, ANTICLOCKWISE);
 				 Send_Response(tempCmdID,2);
+				 motorRotateCleaning = dcMotorCompleted;
 			 }
 			 break;
 		case dcMotorCompleted:
@@ -3238,21 +3237,21 @@ void SensorReadTask(void *argument)
 	  objTemperature = MLX90614_ReadTemp(MLX90614_DEFAULT_SA, MLX90614_TOBJ1);
 	  if(objTemperature == 0 || objTemperature > 400)
 	  {
-		  if(cooking_started == 1)
+		  if(androidProcessStruct.startofCooking == 1)
 		  {
-			  if(errorCnt.temperatureSensorErrorCnt++ >= SENSOR_ERROR_CHECK_CNT)
+			  if(timerCnt.temperatureSensorErrorCnt++ >= SENSOR_ERROR_CHECK_CNT)
 			  {
 				  processError.temperatureSensorError = 1;
 				  processError.errorNumberAndroid = temperatureSensorError;
-				  errorCnt.temperatureSensorErrorCnt = 0;
+				  timerCnt.temperatureSensorErrorCnt = 0;
 			  }
 		  }
 	  }
 	  else if(objTemperature > 0)
 	  {
-		  temperatureArray[cnt] = (int)objTemperature;
-		  sumTemperature += temperatureArray[cnt];
-		  if(cnt++ >= SENSOR_AVG_CNT)
+		  temperatureArray[avgCnt] = (int)objTemperature;
+		  sumTemperature += temperatureArray[avgCnt];
+		  if(avgCnt++ >= SENSOR_AVG_CNT)
 		  {
 			  avgTemperature = (float)sumTemperature/(float)SENSOR_AVG_CNT;
 			  if(temperatureSensorOffset.positiveTemperatureOffsetValue > 0 && avgTemperature > 80)
@@ -3268,7 +3267,7 @@ void SensorReadTask(void *argument)
 				  avgTemperature = avgTemperature;
 			  }
 			  sumTemperature = 0;
-			  cnt = 0;
+			  avgCnt = 0;
 		  }
 		  if(avgTemperature > 0)
 		  {
@@ -3285,13 +3284,13 @@ void SensorReadTask(void *argument)
 #endif
 		  }
 		  processError.temperatureSensorError = 0;
-		  errorCnt.temperatureSensorErrorCnt = 0;
+		  timerCnt.temperatureSensorErrorCnt = 0;
 	  }
 	#elif PROCESS_ERROR_ENABLE == 0
 	  objTemperature = MLX90614_ReadTemp(MLX90614_DEFAULT_SA, MLX90614_TOBJ1);
-	  temperatureArray[cnt] = (int)objTemperature;
-	  sumTemperature += temperatureArray[cnt];
-	  if(cnt++ >= SENSOR_AVG_CNT)
+	  temperatureArray[avgCnt] = (int)objTemperature;
+	  sumTemperature += temperatureArray[avgCnt];
+	  if(avgCnt++ >= SENSOR_AVG_CNT)
 	  {
 		  avgTemperature = (((float)sumTemperature/(float)SENSOR_AVG_CNT));
 		  if(avgTemperature > 80)
@@ -3299,7 +3298,7 @@ void SensorReadTask(void *argument)
 			  avgTemperature = avgTemperature+20;
 		  }
 		  sumTemperature = 0;
-		  cnt = 0;
+		  avgCnt = 0;
 		  if(avgTemperature > 0)
 		  {
 			  previousTemperature = avgTemperature;
