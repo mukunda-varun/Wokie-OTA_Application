@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "dcMotor.h"
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -3221,36 +3222,43 @@ void SensorReadTask(void *argument)
 		  }
 		  speed_avg[speed_cnt] = (current_speed / GEAR_TOOTH_NUMBER);
 		  sum_speed += speed_avg[speed_cnt];
-		  if(speed_cnt++ >= SENSOR_AVG_CNT)
+		  if(!isinf(sum_speed))
 		  {
-			  avg_speed = (float)sum_speed/(float)SENSOR_AVG_CNT;
-			  sum_speed = 0;
-			  speed_cnt = 0;
-			  if(avg_speed > 0)
+			  if(speed_cnt++ >= SENSOR_AVG_CNT)
 			  {
-				  if(avg_speed >= 80)
+				  avg_speed = (float)sum_speed/(float)SENSOR_AVG_CNT;
+				  sum_speed = 0;
+				  speed_cnt = 0;
+				  if(avg_speed > 0)
 				  {
-					  avg_speed = 80;
+					  if(avg_speed >= 80)
+					  {
+						  avg_speed = 80;
+					  }
+					  else
+					  {
+						  avg_speed = avg_speed *  (float)speedCorrectionFactor;
+					  }
+			#if			UART_DEBUG_EN == 1
+					  snprintf(speedSensorBuff, sizeof(speedSensorBuff),"Speed : %d \r\n", (int)avg_speed);
+					  HAL_UART_Transmit(&huart1, (uint8_t *)&speedSensorBuff, strlen(speedSensorBuff), 100);
+					  memset(speedSensorBuff, 0, sizeof(speedSensorBuff));
+			#endif
 				  }
 				  else
 				  {
-					  avg_speed = avg_speed *  (float)speedCorrectionFactor;
+	#if			UART_DEBUG_EN == 1
+					  HAL_UART_Transmit(&huart1, (uint8_t *)"Speed : Error Reading \r\n", sizeof("Speed : Error Reading \r\n"), 100);
+	#endif
 				  }
-		#if			UART_DEBUG_EN == 1
-				  snprintf(speedSensorBuff, sizeof(speedSensorBuff),"Speed : %d \r\n", (int)avg_speed);
-				  HAL_UART_Transmit(&huart1, (uint8_t *)&speedSensorBuff, strlen(speedSensorBuff), 100);
-				  memset(speedSensorBuff, 0, sizeof(speedSensorBuff));
-		#endif
 			  }
-			  else
-			  {
-#if			UART_DEBUG_EN == 1
-				  HAL_UART_Transmit(&huart1, (uint8_t *)"Speed : Error Reading \r\n", sizeof("Speed : Error Reading \r\n"), 100);
-#endif
-			  }
+			  previous_speed = current_speed;
+			  speedSensorErrorCheck();
 		  }
-		  previous_speed = current_speed;
-		  speedSensorErrorCheck();
+		  else
+		  {
+			  avg_speed = 0;
+		  }
 	  }
 #endif
 #if IR_TEMPERATURE_SENSOR_ENABLE == 1
@@ -3358,7 +3366,6 @@ void errorHandleTask(void *argument)
   {
 	#if PROCESS_ERROR_ENABLE == 1
 	  stopHeaterBasedOnError();
-//	  Send_Error_Msg(processError.errorNumberAndroid);
 	#endif
     osDelay(5000);
   }
