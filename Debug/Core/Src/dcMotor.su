@@ -1,0 +1,3 @@
+dcMotor.c:11:6:PWM_Initialize	16	static
+dcMotor.c:55:6:dcMotorSetPWM	16	static
+dcMotor.c:103:6:PWM_Channels_Stop	16	static
