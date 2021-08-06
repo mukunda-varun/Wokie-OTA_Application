@@ -34,9 +34,9 @@ main.c:2692:6:HAL_ADC_ConvHalfCpltCallback	16	static
 main.c:2702:6:HAL_ADC_ConvCpltCallback	16	static
 main.c:2724:6:StartDefaultTask	16	static
 main.c:2817:6:android_task	32	static
-main.c:2992:6:InductionControlTask	16	static
-main.c:3120:6:MotorControlTask	16	static
-main.c:3205:6:SensorReadTask	16	static
-main.c:3350:6:errorHandleTask	16	static
-main.c:3373:6:HAL_TIM_PeriodElapsedCallback	16	static
-main.c:3394:6:Error_Handler	4	static,ignoring_inline_asm
+main.c:2995:6:InductionControlTask	16	static
+main.c:3123:6:MotorControlTask	16	static
+main.c:3208:6:SensorReadTask	16	static
+main.c:3353:6:errorHandleTask	16	static
+main.c:3376:6:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:3397:6:Error_Handler	4	static,ignoring_inline_asm

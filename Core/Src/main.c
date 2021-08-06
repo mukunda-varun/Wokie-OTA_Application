@@ -1758,11 +1758,7 @@ void temperatureControlCurve(uint16_t setTemperatureValue, uint16_t currentTempe
 			if(androidProcessStruct.temperatureAutoMode == 1)
 			{
 				Send_Status_data();
-<<<<<<< HEAD
 				osDelay(10);
-=======
-				osDelay(15);
->>>>>>> 65a08086ed3a40bf106d97e38b173617053fbc1b
 				androidProcessStruct.temperatureAutoMode = 0;
 //				androidProcessStruct.manualMode = 1;
 			}
@@ -2844,13 +2840,9 @@ void android_task(void *argument)
 						 androidProcessStruct.startofCooking = 1;
 //						 androidProcessStruct.endOfCooking = 0;
 						 androidProcessStruct.sendTempAckOnce = 0;
-<<<<<<< HEAD
 						 clearErrors();
 						 clearErrorCounts();
-=======
-						 processError.errorNumberAndroid = 0;
-						 timerCnt.speedSensorErrorCnt = 0;
->>>>>>> 65a08086ed3a40bf106d97e38b173617053fbc1b
+
 						 if(received_data[2] != 0)
 						 {
 							 dutyCycle = getDCMotorlevels(miscellaneousSetting.defaultMotorDutyCycleAuto);
@@ -2898,40 +2890,21 @@ void android_task(void *argument)
 
 						 wattageMode.valueToSet = 0;
 
-<<<<<<< HEAD
-						 temperatureMode.valueToSet = 0;
-						 temperatureMode.valueToSet = 0;
-
-						 inductionMode.temperatureMode = 0;
-						 inductionMode.wattageMode = 0;
-=======
 						 temperatureMode.valueToSet = 0;
 						 temperatureMode.valueToSet = 0;
 
 						 inductionMode.temperatureMode = 0;
 						 inductionMode.wattageMode = 0;
 
-						 processError.temperatureSensorError = 0;
-						 processError.speedSensorError = 0;
-						 processError.inductionBoardError = 0;
-						 processError.processStopError = 0;
-						 processError.errorNumberAndroid = 0;
->>>>>>> 65a08086ed3a40bf106d97e38b173617053fbc1b
+						 temperatureMode.valueToSet = 0;
+						 temperatureMode.valueToSet = 0;
 
+						 inductionMode.temperatureMode = 0;
+						 inductionMode.wattageMode = 0;
 						 clearErrors();
 						 clearErrorCounts();
 
-<<<<<<< HEAD
 						 clearProcessVariables();
-=======
-						 androidProcessStruct.temperatureAutoMode = 0;
-						 androidProcessStruct.sendTempAckOnce = 0;
-						 androidProcessStruct.manualMode =0;
-						 androidProcessStruct.startofCooking =0;
->>>>>>> 65a08086ed3a40bf106d97e38b173617053fbc1b
-//						 androidProcessStruct.endOfCooking = 1;
-
-//						 timerCnt.endOfCookingCnt = 0;
 
 						 Send_Standby_Status();
 						 osDelay(15);
