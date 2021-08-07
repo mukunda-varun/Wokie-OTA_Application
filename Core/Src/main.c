@@ -3222,7 +3222,7 @@ void SensorReadTask(void *argument)
 		  }
 		  speed_avg[speed_cnt] = (current_speed / GEAR_TOOTH_NUMBER);
 		  sum_speed += speed_avg[speed_cnt];
-		  if(!isinf(sum_speed))
+//		  if(!isinf(sum_speed))
 		  {
 			  if(speed_cnt++ >= SENSOR_AVG_CNT)
 			  {
@@ -3255,10 +3255,10 @@ void SensorReadTask(void *argument)
 			  previous_speed = current_speed;
 			  speedSensorErrorCheck();
 		  }
-		  else
+		  /*else
 		  {
 			  avg_speed = 0;
-		  }
+		  }*/
 	  }
 #endif
 #if IR_TEMPERATURE_SENSOR_ENABLE == 1
