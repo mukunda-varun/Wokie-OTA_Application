@@ -300,6 +300,8 @@ miscSetting_t miscellaneousSetting;
 /************COMPILER ENABLING************/
 #define 	UART_DEBUG_EN					0
 
+#define		OTA_EN 							0
+
 /************MACHINE TYPE ENABLING************/
 #define WOKIE_GREEN_BRD_MC_EN				0
 
@@ -741,6 +743,8 @@ void Error_Handler(void);
 #define RED_LED_STATUS_GPIO_Port GPIOD
 #define SPARE_INPUT_Pin GPIO_PIN_14
 #define SPARE_INPUT_GPIO_Port GPIOD
+#define OTA_LED_DEBUG_Pin GPIO_PIN_15
+#define OTA_LED_DEBUG_GPIO_Port GPIOD
 #define SPEED_MEASURE_Pin GPIO_PIN_6
 #define SPEED_MEASURE_GPIO_Port GPIOC
 #define SWDIO_Pin GPIO_PIN_13

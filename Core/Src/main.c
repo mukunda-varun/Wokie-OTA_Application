@@ -47,7 +47,17 @@ extern void dacSetVoltage( uint16_t output, char writeEEPROM );
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#if OTA_EN == 1
+#if LED_BUZZER_OTA == 1
+	#define  	GPIO_PORT			BUZZER_GPIO_Port
+	#define		GPIO_PIN			BUZZER_Pin
+#elif LED_BUZZER_OTA == 0
+	#define  	GPIO_PORT			OTA_LED_DEBUG_GPIO_Port
+	#define		GPIO_PIN			OTA_LED_DEBUG_Pin
+#endif
 
+extern const int dataval;
+#endif
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -114,7 +124,6 @@ uint8_t cooking_started=0;
 uint8_t temp_raise=0, ackCnt = 0, wattAckCnt = 0;
 uint8_t counter=0;
 uint8_t pressCnt = 0;
-
 
 /*Sequence for Seven Segment display
  * BFAGDHCE(76543210)
@@ -1924,11 +1933,24 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
+#if OTA_EN == 1
+  if(dataval > 10)
+  {
+ 	 HAL_GPIO_WritePin(OTA_LED_DEBUG_GPIO_Port, OTA_LED_DEBUG_Pin, SET);
+ 	 HAL_Delay(10);
+ 	 HAL_GPIO_WritePin(OTA_LED_DEBUG_GPIO_Port, OTA_LED_DEBUG_Pin, RESET);
+  }
+  for(int i = 0; i < 4; i++)
+  {
+	  HAL_GPIO_TogglePin(GPIO_PORT, GPIO_PIN);
+	  HAL_Delay(750);
+  }
+#elif OTA_EN == 0
 //  PWM_Initialize(drumDCMotor);
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, SET);
   HAL_Delay(200);
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, RESET);
-
+#endif
 
 #if ANDROID_MC_SETTINGS == 0
   parameterValueAssignment();
@@ -1964,6 +1986,7 @@ int main(void)
 #endif
 //	HAL_Delay(2000);
   /* USER CODE END 2 */
+
   /* Init scheduler */
   osKernelInitialize();
 
@@ -2481,8 +2504,8 @@ static void MX_GPIO_Init(void)
                           |OIL_STEP_PULSE_Pin|WATER_STEP_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, SOLENOID_1_Pin|SOLENOID_2_Pin|WATER_STEP_DIR_Pin|WATER_STEP_PULSE_Pin
-                          |SPARE_STEP_EN_Pin|SPARE_STEP_DIR_Pin|SPARE_STEP_PULSE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, SOLENOID_1_Pin|SOLENOID_2_Pin|OTA_LED_DEBUG_Pin|WATER_STEP_DIR_Pin
+                          |WATER_STEP_PULSE_Pin|SPARE_STEP_EN_Pin|SPARE_STEP_DIR_Pin|SPARE_STEP_PULSE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(OIL_STEP_EN_GPIO_Port, OIL_STEP_EN_Pin, GPIO_PIN_RESET);
@@ -2536,10 +2559,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BOOT1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SOLENOID_1_Pin SOLENOID_2_Pin WATER_STEP_DIR_Pin WATER_STEP_PULSE_Pin
-                           SPARE_STEP_EN_Pin SPARE_STEP_DIR_Pin SPARE_STEP_PULSE_Pin */
-  GPIO_InitStruct.Pin = SOLENOID_1_Pin|SOLENOID_2_Pin|WATER_STEP_DIR_Pin|WATER_STEP_PULSE_Pin
-                          |SPARE_STEP_EN_Pin|SPARE_STEP_DIR_Pin|SPARE_STEP_PULSE_Pin;
+  /*Configure GPIO pins : SOLENOID_1_Pin SOLENOID_2_Pin OTA_LED_DEBUG_Pin WATER_STEP_DIR_Pin
+                           WATER_STEP_PULSE_Pin SPARE_STEP_EN_Pin SPARE_STEP_DIR_Pin SPARE_STEP_PULSE_Pin */
+  GPIO_InitStruct.Pin = SOLENOID_1_Pin|SOLENOID_2_Pin|OTA_LED_DEBUG_Pin|WATER_STEP_DIR_Pin
+                          |WATER_STEP_PULSE_Pin|SPARE_STEP_EN_Pin|SPARE_STEP_DIR_Pin|SPARE_STEP_PULSE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
