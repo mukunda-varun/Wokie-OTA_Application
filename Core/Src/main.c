@@ -1948,7 +1948,7 @@ int main(void)
 #elif OTA_EN == 0
 //  PWM_Initialize(drumDCMotor);
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, SET);
-  HAL_Delay(200);
+  HAL_Delay(250);
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, RESET);
 #endif
 
