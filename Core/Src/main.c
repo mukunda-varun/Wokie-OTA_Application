@@ -281,6 +281,7 @@ void clearProcessVariables(void)
 	 androidProcessStruct.sendTempAckOnce = 0;
 	 androidProcessStruct.manualMode =0;
 	 androidProcessStruct.startofCooking =0;
+	 androidProcessStruct.autoMode = 0;
 }
 /* @brief:  Send Acknowledment Response to USB
  * @params: id->Message ID
@@ -1943,7 +1944,7 @@ int main(void)
   for(int i = 0; i < 4; i++)
   {
 	  HAL_GPIO_TogglePin(GPIO_PORT, GPIO_PIN);
-	  HAL_Delay(750);
+	  HAL_Delay(1000);
   }
 #elif OTA_EN == 0
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, SET);
@@ -2872,6 +2873,7 @@ void android_task(void *argument)
 							 drumMotor = dcMotorInit;
 							 osDelay(20);
 							 androidProcessStruct.temperatureAutoMode = 1;
+							 androidProcessStruct.autoMode = 1;
 							 androidProcessStruct.manualMode = 0;
 							 if(received_data[3] != 0)
 							 {
@@ -2891,6 +2893,7 @@ void android_task(void *argument)
 							 osDelay(20);
 							 Send_Status_data();
 							 androidProcessStruct.temperatureAutoMode = 0;
+							 androidProcessStruct.autoMode = 0;
 							 androidProcessStruct.manualMode = 1;
 						 }
 						break;
@@ -2935,6 +2938,12 @@ void android_task(void *argument)
 						 break;
 					case INSTRUCTION_SET:
 						 if(androidProcessStruct.manualMode == 1)
+						 {
+							 dataAndroid = ((received_data[4]<<8) | (received_data[3]));
+							 memcpy(and_ack, received_data, 64);
+							 Process_WOKIE_Control(cmd_id, dataAndroid);
+						 }
+						 if(androidProcessStruct.autoMode == 1 && (cmd_id == ROTATE_DRUM || cmd_id == ROTATION_OFF))
 						 {
 							 dataAndroid = ((received_data[4]<<8) | (received_data[3]));
 							 memcpy(and_ack, received_data, 64);

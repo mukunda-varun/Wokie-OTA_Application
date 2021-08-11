@@ -22,4 +22,8 @@ DELTA_METHOD					(line 338) -> Enable/Disable the temperature control mode with 
 GET_DISPLAY_WITH_ADC			(line 340) -> Enables the data fetch of 7 segment with BS84C12A using ADC method(not used)
 PROCESS_ERROR_ENABLE			(line 342) -> Enables Error mechanisms of the machine(wokie)
 ANDROID_MC_SETTINGS				(line 344) -> Enables the android machine settings
+
+LED_BUZZER_OTA					(line 442) -> GPIO Toggling during bootup selection, mainly for OTA(0 = DISCOVERY LED, 1 = PCB BUZZER)
+
+For OTA Enabling need to update the macro in line number 301 to 1 andd change few things in flash.ld file.
 ----------COMPILER ENABLE/DISABLES----------

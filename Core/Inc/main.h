@@ -215,6 +215,7 @@ errorState processError;
 typedef struct{
 uint8_t startofCooking : 1;	//soc_flag
 uint8_t temperatureAutoMode : 1;
+uint8_t autoMode : 1;
 uint8_t sendTempAckOnce : 1;
 uint8_t manualMode : 1;//cooking_started
 //uint8_t endOfCooking : 1;//eoc_flag
@@ -300,7 +301,7 @@ miscSetting_t miscellaneousSetting;
 /************COMPILER ENABLING************/
 #define 	UART_DEBUG_EN					0
 
-#define		OTA_EN 							0
+#define		OTA_EN 							1
 
 /************MACHINE TYPE ENABLING************/
 #define WOKIE_GREEN_BRD_MC_EN				0
@@ -439,7 +440,7 @@ miscSetting_t miscellaneousSetting;
 
 #endif
 
-
+#define		LED_BUZZER_OTA					1			//0 for LED(Discovery) & 1 for Buzzer(PCB)
 /************COMPILER ENABLING************/
 
 /************PROCESS DEFAULTS*************/

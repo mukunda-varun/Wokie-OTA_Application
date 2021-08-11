@@ -35,11 +35,17 @@ _Min_Heap_Size = 0x200 ;	/* required amount of heap  */
 _Min_Stack_Size = 0x400 ;	/* required amount of stack */
 
 /* Memories definition */
+ /* Add below section for non-OTA Code
+  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 1024K  */
+  /* Add below section for OTA function to be available*/
+  /* FLASH    (rx)    : ORIGIN = 0x8040000,   LENGTH = 128K
+  VERSION    (rwx)    : ORIGIN = 0x8060000,   LENGTH =4K */	
 MEMORY
 {
   CCMRAM    (xrw)    : ORIGIN = 0x10000000,   LENGTH = 64K
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 1024K
+  FLASH    (rx)    : ORIGIN = 0x8040000,   LENGTH = 128K
+  VERSION    (rwx)    : ORIGIN = 0x8060000,   LENGTH =4K 			
 }
 
 /* Sections */
@@ -78,6 +84,17 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
   } >FLASH
+
+/* User data section at the end of the flash to store calibration data etc. Uncomment below section for OTA enabling*/
+.user_data :
+{
+  . = ALIGN(4);
+  _user_data_start = .; 
+   *(.user_data)
+   *(.user_data*)
+  . = ALIGN(4);
+  _user_data_end = .;  
+} >VERSION 
 
   .ARM.extab   : {
     . = ALIGN(4);
