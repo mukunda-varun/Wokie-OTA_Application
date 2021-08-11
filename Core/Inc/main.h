@@ -301,7 +301,7 @@ miscSetting_t miscellaneousSetting;
 /************COMPILER ENABLING************/
 #define 	UART_DEBUG_EN					0
 
-#define		OTA_EN 							1
+#define		OTA_EN 							0
 
 /************MACHINE TYPE ENABLING************/
 #define WOKIE_GREEN_BRD_MC_EN				0
