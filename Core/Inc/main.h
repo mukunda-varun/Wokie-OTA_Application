@@ -114,6 +114,7 @@ typedef enum
    ERROR_ID,					//10
    MANUAL_CLEANING = 18,
    MC_SETTINGS = 32,					//7
+   HANDSHAKE_CHECK_ID,
 }msg_id_t;
 
 typedef enum
@@ -129,6 +130,7 @@ typedef enum
 	interBrdCommnError,
 	speedSensorError = 11,
 	temperatureSensorError,
+	androidAckError,
 }errorID_t;
 
 typedef enum motorDC
@@ -199,6 +201,7 @@ typedef struct{
 	uint8_t inductionBoardErrorCnt;
 	uint8_t inductionErrorCnt;
 	uint16_t stopErrorCnt;
+	uint8_t androidAckErrorCnt;
 //	uint8_t endOfCookingCnt;
 }Cnt;
 Cnt timerCnt;
@@ -209,6 +212,7 @@ typedef struct{
 	uint8_t inductionBoardError : 1;
 	uint8_t errorNumberAndroid;
 	uint8_t processStopError : 1;
+	uint8_t androidAckError :  1;
 }errorState;
 errorState processError;
 
@@ -343,6 +347,8 @@ miscSetting_t miscellaneousSetting;
 	#define PROCESS_ERROR_ENABLE			1
 
 	#define ANDROID_MC_SETTINGS				0
+
+	#define ANDROID_ACK_CHECK_EN			0
 #elif WOKIE_GREEN_BRD_MC_EN
 
 	#define	TM1668_DRIVE_ENABLE				1
@@ -374,6 +380,8 @@ miscSetting_t miscellaneousSetting;
 	#define PROCESS_ERROR_ENABLE			1
 
 	#define ANDROID_MC_SETTINGS				0
+
+	#define ANDROID_ACK_CHECK_EN			0
 #elif ACT_MACHINE_EN == 1
 
 	#define	TM1668_DRIVE_ENABLE				0
@@ -406,6 +414,8 @@ miscSetting_t miscellaneousSetting;
 
 	#define ANDROID_MC_SETTINGS				0
 
+	#define ANDROID_ACK_CHECK_EN			0
+
 #elif WOKIE_BLACK_BRD_EN == 1
 
 	#define	TM1668_DRIVE_ENABLE				0
@@ -437,6 +447,8 @@ miscSetting_t miscellaneousSetting;
 	#define PROCESS_ERROR_ENABLE			1
 
 	#define ANDROID_MC_SETTINGS				1
+
+	#define ANDROID_ACK_CHECK_EN			0
 
 #endif
 

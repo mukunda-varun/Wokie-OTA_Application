@@ -266,6 +266,7 @@ void clearErrorCounts(void)
 	 timerCnt.inductionBoardErrorCnt = 0;
 	 timerCnt.inductionErrorCnt = 0;
 	 timerCnt.stopErrorCnt = 0;
+	 timerCnt.androidAckErrorCnt = 0;
 }
 void clearErrors(void)
 {
@@ -274,6 +275,7 @@ void clearErrors(void)
 	 processError.inductionBoardError = 0;
 	 processError.processStopError = 0;
 	 processError.errorNumberAndroid = 0;
+	 processError.androidAckError = 0;
 }
 void clearProcessVariables(void)
 {
@@ -2996,6 +2998,12 @@ void android_task(void *argument)
 						 tempCmdID = MANUAL_CLEANING;
 						 Send_Response(tempCmdID,1);
 						 break;
+		#if 		ANDROID_ACK_CHECK_EN == 1
+					case HANDSHAKE_CHECK_ID:
+						 tempCmdID = HANDSHAKE_CHECK_ID;
+						 Send_Response(tempCmdID,1);
+						 break;
+		#endif
 
 				}
 			}
@@ -3004,6 +3012,22 @@ void android_task(void *argument)
 		{
 			Send_Status_Wait_ACK();
 		}
+#if 	ANDROID_ACK_CHECK_EN == 1
+		if(data_id != HANDSHAKE_CHECK_ID)
+		{
+			if(timerCnt.androidAckErrorCnt++ >= 4)
+			{
+				processError.androidAckError = 1;
+				processError.processStopError = 1;
+				processError.errorNumberAndroid = androidAckError;
+			}
+		}
+		else if(data_id == HANDSHAKE_CHECK_ID)
+		{
+			timerCnt.androidAckErrorCnt = 0;
+			processError.androidAckError = 0;
+		}
+#endif
 		/*if(androidProcessStruct.endOfCooking && timerCnt.endOfCookingCnt++ >= 2)
 		{
 			Send_Standby_Status();
@@ -3398,7 +3422,7 @@ void errorHandleTask(void *argument)
 	#if PROCESS_ERROR_ENABLE == 1
 	  stopHeaterBasedOnError();
 	#endif
-    osDelay(5000);
+    osDelay(3000);
   }
   /* USER CODE END errorHandleTask */
 }
