@@ -1946,7 +1946,7 @@ int main(void)
   for(int i = 0; i < 4; i++)
   {
 	  HAL_GPIO_TogglePin(GPIO_PORT, GPIO_PIN);
-	  HAL_Delay(1000);
+	  HAL_Delay(500);
   }
 #elif OTA_EN == 0
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, SET);
